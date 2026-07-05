@@ -1,80 +1,115 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Save } from "lucide-react";
 import { AdminSection } from "@/components/admin/AdminSection";
-import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface Client {
-  id: string;
-  name: string;
-  website: string;
-  logo?: string;
-}
-
-const seed: Client[] = [
-  { id: "1", name: "شركة الاتصالات", website: "https://example.com" },
-  { id: "2", name: "بنك التنمية", website: "https://example.com" },
-  { id: "3", name: "مجموعة النخبة", website: "https://example.com" },
-  { id: "4", name: "مؤسسة الرؤية", website: "https://example.com" },
-];
+import { useAdminTable } from "@/hooks/useAdminTable";
 
 export const Route = createFileRoute("/adminpanel/clients")({
   component: ClientsAdmin,
 });
 
+interface Client {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
 function ClientsAdmin() {
-  const [items, setItems] = useState<Client[]>(seed);
-  const update = (id: string, patch: Partial<Client>) =>
-    setItems((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  const remove = (id: string) => setItems((s) => s.filter((x) => x.id !== id));
-  const add = () =>
-    setItems((s) => [...s, { id: crypto.randomUUID(), name: "عميل جديد", website: "" }]);
+  const { rows, loading, error, save, remove } = useAdminTable<Client>("clients");
 
   return (
     <AdminSection
       title="عملاؤنا"
-      description="أدر شعارات وأسماء العملاء الظاهرة في قسم عملاؤنا."
+      description="أدر شعارات وأسماء العملاء الظاهرة في قسم عملاؤنا. محفوظة في قاعدة البيانات."
       action={
-        <Button onClick={add}>
+        <Button onClick={() => save({ name: "عميل جديد", sort_order: rows.length + 1 })}>
           <Plus className="ms-2 h-4 w-4" /> إضافة عميل
         </Button>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((it) => (
-          <div key={it.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">عميل</span>
-              <Button variant="ghost" size="icon" onClick={() => remove(it.id)} className="text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-            <ImageUpload
-              value={it.logo}
-              onChange={(url) => update(it.id, { logo: url })}
-              aspect="square"
-              label="شعار العميل"
-            />
-            <div className="mt-3 space-y-3">
-              <div>
-                <Label>اسم العميل</Label>
-                <Input value={it.name} onChange={(e) => update(it.id, { name: e.target.value })} />
-              </div>
-              <div>
-                <Label>الموقع الإلكتروني</Label>
-                <Input value={it.website} placeholder="https://" onChange={(e) => update(it.id, { website: e.target.value })} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline">إلغاء</Button>
-        <Button>حفظ التغييرات</Button>
-      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {loading ? (
+        <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((it) => (
+            <ClientCard key={it.id} item={it} onSave={save} onRemove={remove} />
+          ))}
+          {rows.length === 0 && <p className="text-sm text-muted-foreground">لا يوجد عملاء بعد.</p>}
+        </div>
+      )}
     </AdminSection>
+  );
+}
+
+function ClientCard({
+  item,
+  onSave,
+  onRemove,
+}: {
+  item: Client;
+  onSave: (row: Partial<Client>) => Promise<unknown>;
+  onRemove: (id: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState(item);
+  const [saving, setSaving] = useState(false);
+  const set = (patch: Partial<Client>) => setDraft((d) => ({ ...d, ...patch }));
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">عميل</span>
+        <Button variant="ghost" size="icon" onClick={() => onRemove(item.id)} className="text-destructive">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      {draft.logo_url && (
+        <img src={draft.logo_url} alt={draft.name} className="mb-3 h-16 w-full rounded-md object-contain" />
+      )}
+      <div className="space-y-3">
+        <div>
+          <Label>اسم العميل</Label>
+          <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
+        </div>
+        <div>
+          <Label>رابط الشعار</Label>
+          <Input dir="ltr" value={draft.logo_url ?? ""} onChange={(e) => set({ logo_url: e.target.value })} placeholder="https://..." />
+        </div>
+        <div>
+          <Label>الموقع الإلكتروني</Label>
+          <Input dir="ltr" value={draft.website_url ?? ""} onChange={(e) => set({ website_url: e.target.value })} placeholder="https://..." />
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Label>الترتيب</Label>
+            <Input type="number" value={draft.sort_order} onChange={(e) => set({ sort_order: Number(e.target.value) })} />
+          </div>
+          <label className="flex items-center gap-2 pt-6 text-sm">
+            <input type="checkbox" checked={draft.is_active} onChange={(e) => set({ is_active: e.target.checked })} />
+            مُفعّل
+          </label>
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <Button
+          size="sm"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            await onSave(draft);
+            setSaving(false);
+          }}
+        >
+          {saving ? <Loader2 className="ms-2 h-4 w-4 animate-spin" /> : <Save className="ms-2 h-4 w-4" />}
+          حفظ
+        </Button>
+      </div>
+    </div>
   );
 }

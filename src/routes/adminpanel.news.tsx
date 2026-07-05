@@ -1,51 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, Pencil, ArrowRight } from "lucide-react";
+import { Plus, Trash2, Loader2, Save } from "lucide-react";
 import { AdminSection } from "@/components/admin/AdminSection";
-import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-
-interface Article {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  date: string;
-  author: string;
-  cover?: string;
-  published: boolean;
-}
-
-const seed: Article[] = [
-  {
-    id: "1",
-    title: "أفضل ممارسات حماية البريد الإلكتروني للشركات",
-    slug: "email-security-best-practices",
-    excerpt: "دليل عملي لتأمين البريد الإلكتروني ضد التصيد وهجمات التسوية.",
-    content: "المحتوى الكامل للمقال يظهر هنا...",
-    date: "2026-06-15",
-    author: "فريق لمحة سيك",
-    published: true,
-  },
-  {
-    id: "2",
-    title: "مركز عمليات الأمن SOC — لماذا هو ضروري؟",
-    slug: "why-you-need-a-soc",
-    excerpt: "شرح مبسط لدور مركز عمليات الأمن وقيمته للأعمال.",
-    content: "المحتوى الكامل...",
-    date: "2026-06-01",
-    author: "قسم الأبحاث",
-    published: true,
-  },
-];
+import { useAdminTable } from "@/hooks/useAdminTable";
 
 export const Route = createFileRoute("/adminpanel/news")({
   component: NewsAdmin,
 });
+
+interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string | null;
+  image_url: string | null;
+  published_at: string | null;
+  is_published: boolean;
+}
 
 function slugify(s: string) {
   return s
@@ -56,164 +32,108 @@ function slugify(s: string) {
 }
 
 function NewsAdmin() {
-  const [items, setItems] = useState<Article[]>(seed);
-  const [editing, setEditing] = useState<string | null>(null);
+  const { rows, loading, error, save, remove } = useAdminTable<Article>("news");
 
-  const update = (id: string, patch: Partial<Article>) =>
-    setItems((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  const remove = (id: string) => setItems((s) => s.filter((x) => x.id !== id));
-  const add = () => {
-    const id = crypto.randomUUID();
-    setItems((s) => [
-      { id, title: "مقال جديد", slug: "new-post", excerpt: "", content: "", date: new Date().toISOString().slice(0, 10), author: "", published: false },
-      ...s,
-    ]);
-    setEditing(id);
-  };
-
-  const current = items.find((x) => x.id === editing);
-
-  if (current) {
-    return (
-      <AdminSection
-        title="تحرير المقال"
-        description={current.title}
-        action={
-          <Button variant="ghost" onClick={() => setEditing(null)}>
-            <ArrowRight className="ms-2 h-4 w-4" /> رجوع
-          </Button>
-        }
-      >
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-            <div>
-              <Label>عنوان المقال</Label>
-              <Input
-                value={current.title}
-                onChange={(e) =>
-                  update(current.id, { title: e.target.value, slug: slugify(e.target.value) || current.slug })
-                }
-              />
-            </div>
-            <div>
-              <Label>الرابط (slug)</Label>
-              <Input value={current.slug} onChange={(e) => update(current.id, { slug: e.target.value })} />
-            </div>
-            <div>
-              <Label>ملخص قصير</Label>
-              <Textarea rows={2} value={current.excerpt} onChange={(e) => update(current.id, { excerpt: e.target.value })} />
-            </div>
-            <div>
-              <Label>المحتوى</Label>
-              <Textarea
-                rows={12}
-                value={current.content}
-                onChange={(e) => update(current.id, { content: e.target.value })}
-                placeholder="اكتب محتوى المقال هنا..."
-              />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <ImageUpload
-                value={current.cover}
-                onChange={(url) => update(current.id, { cover: url })}
-                aspect="video"
-                label="صورة الغلاف"
-              />
-            </div>
-            <div className="space-y-3 rounded-xl border border-border bg-card p-5 shadow-sm">
-              <div>
-                <Label>الكاتب</Label>
-                <Input value={current.author} onChange={(e) => update(current.id, { author: e.target.value })} />
-              </div>
-              <div>
-                <Label>تاريخ النشر</Label>
-                <Input type="date" value={current.date} onChange={(e) => update(current.id, { date: e.target.value })} />
-              </div>
-              <label className="flex items-center gap-2 pt-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-border"
-                  checked={current.published}
-                  onChange={(e) => update(current.id, { published: e.target.checked })}
-                />
-                منشور
-              </label>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditing(null)}>إلغاء</Button>
-              <Button onClick={() => setEditing(null)}>حفظ</Button>
-            </div>
-          </div>
-        </div>
-      </AdminSection>
-    );
-  }
+  const addNew = () =>
+    save({
+      title: "مقال جديد",
+      slug: `article-${Date.now()}`,
+      is_published: false,
+      published_at: new Date().toISOString(),
+    });
 
   return (
     <AdminSection
-      title="الأخبار (مدونة)"
-      description="إدارة مقالات المدونة: إضافة، تحرير، وحذف."
+      title="الأخبار (المدونة)"
+      description="أضف أو عدّل مقالات الأخبار. محفوظة في قاعدة البيانات."
       action={
-        <Button onClick={add}>
-          <Plus className="ms-2 h-4 w-4" /> مقال جديد
+        <Button onClick={addNew}>
+          <Plus className="ms-2 h-4 w-4" /> إضافة مقال
         </Button>
       }
     >
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-        <table className="w-full text-right text-sm">
-          <thead className="bg-muted/40 text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">العنوان</th>
-              <th className="px-4 py-3 font-medium">التاريخ</th>
-              <th className="px-4 py-3 font-medium">الحالة</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {items.map((it) => (
-              <tr key={it.id} className="hover:bg-muted/30">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    {it.cover ? (
-                      <img src={it.cover} alt="" className="h-10 w-14 rounded object-cover" />
-                    ) : (
-                      <div className="h-10 w-14 rounded bg-muted" />
-                    )}
-                    <div>
-                      <div className="font-medium text-foreground">{it.title}</div>
-                      <div className="text-xs text-muted-foreground">/{it.slug}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{it.date}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      it.published
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : "bg-amber-500/10 text-amber-600"
-                    }`}
-                  >
-                    {it.published ? "منشور" : "مسودة"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(it.id)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(it.id)} className="text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {loading ? (
+        <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+      ) : (
+        <div className="space-y-4">
+          {rows.map((it) => (
+            <ArticleCard key={it.id} item={it} onSave={save} onRemove={remove} />
+          ))}
+          {rows.length === 0 && <p className="text-sm text-muted-foreground">لا توجد مقالات بعد.</p>}
+        </div>
+      )}
     </AdminSection>
+  );
+}
+
+function ArticleCard({
+  item,
+  onSave,
+  onRemove,
+}: {
+  item: Article;
+  onSave: (row: Partial<Article>) => Promise<unknown>;
+  onRemove: (id: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState(item);
+  const [saving, setSaving] = useState(false);
+  const set = (patch: Partial<Article>) => setDraft((d) => ({ ...d, ...patch }));
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">مقال</span>
+        <Button variant="ghost" size="icon" onClick={() => onRemove(item.id)} className="text-destructive">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <Label>العنوان</Label>
+          <Input
+            value={draft.title}
+            onChange={(e) => {
+              const title = e.target.value;
+              set({ title, slug: draft.slug ? draft.slug : slugify(title) });
+            }}
+          />
+        </div>
+        <div>
+          <Label>الرابط (slug)</Label>
+          <Input dir="ltr" value={draft.slug} onChange={(e) => set({ slug: e.target.value })} />
+        </div>
+        <div>
+          <Label>رابط الصورة</Label>
+          <Input dir="ltr" value={draft.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://..." />
+        </div>
+        <div className="md:col-span-2">
+          <Label>المقتطف</Label>
+          <Textarea rows={2} value={draft.excerpt ?? ""} onChange={(e) => set({ excerpt: e.target.value })} />
+        </div>
+        <div className="md:col-span-2">
+          <Label>المحتوى</Label>
+          <Textarea rows={5} value={draft.content ?? ""} onChange={(e) => set({ content: e.target.value })} />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={draft.is_published} onChange={(e) => set({ is_published: e.target.checked })} />
+          منشور
+        </label>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <Button
+          size="sm"
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            await onSave(draft);
+            setSaving(false);
+          }}
+        >
+          {saving ? <Loader2 className="ms-2 h-4 w-4 animate-spin" /> : <Save className="ms-2 h-4 w-4" />}
+          حفظ
+        </Button>
+      </div>
+    </div>
   );
 }
