@@ -57,7 +57,15 @@ function parseOffer(desc: string | null): { note: string; features: string[] } {
 }
 
 function Index() {
-  const { slides, services, offers, systems, clients, news } = Route.useLoaderData();
+  const { slides, services, offers, systems, clients, news } = Route.useLoaderData() as {
+    slides: PublicSlide[];
+    services: PublicService[];
+    offers: PublicOffer[];
+    systems: PublicSystem[];
+    clients: PublicClient[];
+    news: PublicNews[];
+    socialLinks: import("@/lib/public.functions").PublicSocialLink[];
+  };
   const [active, setActive] = useState(0);
   const [openSystem, setOpenSystem] = useState<SystemItem | null>(null);
 
