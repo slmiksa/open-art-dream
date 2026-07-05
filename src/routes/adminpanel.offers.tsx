@@ -94,10 +94,11 @@ function OfferCard({
             <Input value={draft.price ?? ""} onChange={(e) => set({ price: e.target.value })} placeholder="اختياري" />
           </div>
         </div>
-        <div>
-          <Label>رابط الصورة</Label>
-          <Input dir="ltr" value={draft.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://..." />
-        </div>
+        <ImageUpload
+          label="صورة العرض (اختياري)"
+          value={draft.image_url}
+          onChange={(url) => set({ image_url: url ?? null })}
+        />
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Label>الترتيب</Label>
