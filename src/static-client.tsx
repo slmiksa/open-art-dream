@@ -5,8 +5,9 @@ import { getRouter } from "./router";
 import "./styles.css";
 
 const router = getRouter();
+const rootElement = document.getElementById("root") ?? document.body;
 
-createRoot(document.body).render(
+createRoot(rootElement).render(
   <StrictMode>
     <RouterProvider router={router} />
   </StrictMode>,

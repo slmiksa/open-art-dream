@@ -9,9 +9,9 @@ export function useAdminAuth() {
 
   const check = useCallback(async () => {
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
       setStatus("unauth");
       return;
     }
@@ -24,13 +24,27 @@ export function useAdminAuth() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
+    const safeCheck = () => {
+      if (active) void check();
+    };
+
     check();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        check();
+      if (!active) return;
+      if (event === "SIGNED_OUT") {
+        setStatus("unauth");
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        window.setTimeout(safeCheck, 0);
       }
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, [check]);
 
   return { status, recheck: check };

@@ -57,7 +57,7 @@ writeFileSync(
     <link rel="stylesheet" href="/assets/${css}" />
     <script type="module" src="/assets/${appJs}"></script>
   </head>
-  <body></body>
+  <body><div id="root"></div></body>
 </html>
 `,
 );
