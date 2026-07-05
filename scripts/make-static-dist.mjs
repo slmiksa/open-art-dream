@@ -29,10 +29,10 @@ for (const entry of readdirSync(client, { withFileTypes: true })) {
 }
 
 const assets = readdirSync(join(temp, "assets"));
-const appJs = assets.find((name) => /^index-[\w-]+\.js$/.test(name));
+const appJs = assets.find((name) => /^static-client-[\w-]+\.js$/.test(name));
 const css = assets.find((name) => /^styles-[\w-]+\.css$/.test(name));
 
-if (!appJs) throw new Error("لم يتم العثور على ملف تشغيل التطبيق index-*.js");
+if (!appJs) throw new Error("لم يتم العثور على ملف تشغيل التطبيق static-client-*.js");
 if (!css) throw new Error("لم يتم العثور على ملف التنسيقات styles-*.css");
 
 writeFileSync(
