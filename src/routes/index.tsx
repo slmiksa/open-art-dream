@@ -16,7 +16,9 @@ import {
   type PublicClient,
   type PublicNews,
   type PublicOffer,
+  type PublicService,
   type PublicSlide,
+  type PublicSystem,
 } from "@/lib/public.functions";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
