@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAdminStatus } from "@/lib/admin.functions";
 
@@ -6,43 +6,55 @@ export type AdminAuthStatus = "loading" | "unauth" | "forbidden" | "admin";
 
 export function useAdminAuth() {
   const [status, setStatus] = useState<AdminAuthStatus>("loading");
+  const mountedRef = useRef(false);
+  const checkRunRef = useRef(0);
 
   const check = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setStatus("unauth");
-      return;
-    }
+    const runId = ++checkRunRef.current;
+    const setCurrentStatus = (next: AdminAuthStatus) => {
+      if (mountedRef.current && checkRunRef.current === runId) setStatus(next);
+    };
+
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setCurrentStatus("unauth");
+        return;
+      }
       const res = await getAdminStatus();
-      setStatus(res.isAdmin ? "admin" : "forbidden");
+      setCurrentStatus(res.isAdmin ? "admin" : "forbidden");
     } catch {
-      setStatus("forbidden");
+      setCurrentStatus("forbidden");
     }
   }, []);
 
   useEffect(() => {
-    let active = true;
+    mountedRef.current = true;
+    let timeoutId: number | undefined;
 
     const safeCheck = () => {
-      if (active) void check();
+      if (mountedRef.current) void check();
     };
 
-    check();
+    void check();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (!active) return;
+      if (!mountedRef.current) return;
       if (event === "SIGNED_OUT") {
+        checkRunRef.current += 1;
         setStatus("unauth");
         return;
       }
       if (event === "SIGNED_IN" || event === "USER_UPDATED") {
-        window.setTimeout(safeCheck, 0);
+        setStatus("loading");
+        timeoutId = window.setTimeout(safeCheck, 50);
       }
     });
     return () => {
-      active = false;
+      mountedRef.current = false;
+      checkRunRef.current += 1;
+      if (timeoutId) window.clearTimeout(timeoutId);
       sub.subscription.unsubscribe();
     };
   }, [check]);
