@@ -3,22 +3,24 @@ import { ArrowLeft, Calendar } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
-import { getNews, news } from "@/lib/news";
+import { getPublicNewsBySlug, type PublicNews, type PublicNewsFull } from "@/lib/public.functions";
 
 export const Route = createFileRoute("/news/$slug")({
-  loader: ({ params }) => {
-    const item = getNews(params.slug);
-    if (!item) throw notFound();
-    return item;
+  loader: async ({ params }) => {
+    const res = await getPublicNewsBySlug({ data: { slug: params.slug } });
+    if (!res.item) throw notFound();
+    return res as { item: PublicNewsFull; others: PublicNews[] };
   },
   head: ({ loaderData }) => ({
-    meta: loaderData
+    meta: loaderData?.item
       ? [
-          { title: `${loaderData.title} — LamhaSec` },
-          { name: "description", content: loaderData.excerpt },
-          { property: "og:title", content: loaderData.title },
-          { property: "og:description", content: loaderData.excerpt },
-          { property: "og:image", content: loaderData.image },
+          { title: `${loaderData.item.title} — LamhaSec` },
+          { name: "description", content: loaderData.item.excerpt ?? "" },
+          { property: "og:title", content: loaderData.item.title },
+          { property: "og:description", content: loaderData.item.excerpt ?? "" },
+          ...(loaderData.item.image_url
+            ? [{ property: "og:image", content: loaderData.item.image_url }]
+            : []),
         ]
       : [],
   }),
@@ -41,8 +43,7 @@ export const Route = createFileRoute("/news/$slug")({
 });
 
 function NewsDetail() {
-  const item = Route.useLoaderData();
-  const others = news.filter((n) => n.slug !== item.slug).slice(0, 2);
+  const { item, others } = Route.useLoaderData() as { item: PublicNewsFull; others: PublicNews[] };
 
   return (
     <div className="min-h-screen font-arabic bg-white text-[var(--ink)]" dir="rtl">
@@ -58,31 +59,27 @@ function NewsDetail() {
         </Link>
 
         <div className="mt-6 flex items-center gap-3">
-          <span className="rounded bg-[var(--brand)] px-3 py-1 text-xs font-bold text-white">
-            {item.tag}
-          </span>
-          <span className="inline-flex items-center gap-1 text-sm text-[var(--ink-soft)]">
-            <Calendar className="h-4 w-4" />
-            {item.date}
-          </span>
+          <span className="rounded bg-[var(--brand)] px-3 py-1 text-xs font-bold text-white">أخبار</span>
+          {item.date && (
+            <span className="inline-flex items-center gap-1 text-sm text-[var(--ink-soft)]">
+              <Calendar className="h-4 w-4" />
+              {item.date}
+            </span>
+          )}
         </div>
 
         <h1 className="mt-4 text-3xl font-black leading-tight text-[var(--purple)] md:text-5xl">
           {item.title}
         </h1>
 
-        <div className="mt-8 overflow-hidden rounded-2xl border border-[var(--line)]">
-          <img
-            src={item.image}
-            alt={item.title}
-            width={1024}
-            height={1024}
-            className="h-auto w-full object-cover"
-          />
-        </div>
+        {item.image_url && (
+          <div className="mt-8 overflow-hidden rounded-2xl border border-[var(--line)]">
+            <img src={item.image_url} alt={item.title} className="h-auto w-full object-cover" />
+          </div>
+        )}
 
         <div className="prose prose-lg mt-8 max-w-none space-y-5 text-base leading-loose text-[var(--ink)] md:text-lg">
-          {item.content.map((p: string, i: number) => (
+          {item.content.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
         </div>
@@ -100,20 +97,18 @@ function NewsDetail() {
                   params={{ slug: n.slug }}
                   className="group overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-sm transition hover:shadow-lg"
                 >
-                  <div className="h-44 overflow-hidden">
-                    <img
-                      src={n.image}
-                      alt={n.title}
-                      loading="lazy"
-                      width={1024}
-                      height={1024}
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  </div>
+                  {n.image_url && (
+                    <div className="h-44 overflow-hidden">
+                      <img
+                        src={n.image_url}
+                        alt={n.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition group-hover:scale-105"
+                      />
+                    </div>
+                  )}
                   <div className="p-5">
-                    <span className="rounded bg-[var(--brand)]/10 px-2 py-0.5 text-xs font-bold text-[var(--brand)]">
-                      {n.tag}
-                    </span>
+                    <span className="rounded bg-[var(--brand)]/10 px-2 py-0.5 text-xs font-bold text-[var(--brand)]">أخبار</span>
                     <h3 className="mt-3 text-lg font-bold text-[var(--purple)]">{n.title}</h3>
                   </div>
                 </Link>

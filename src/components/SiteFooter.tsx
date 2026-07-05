@@ -1,7 +1,32 @@
-import { Mail, Phone, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Twitter, Youtube, type LucideIcon } from "lucide-react";
 import { LogoMark } from "./LogoMark";
+import { getPublicSocialLinks, type PublicSocialLink } from "@/lib/public.functions";
+
+const SOCIAL_ICONS: Record<string, LucideIcon> = {
+  facebook: Facebook,
+  instagram: Instagram,
+  twitter: Twitter,
+  x: Twitter,
+  linkedin: Linkedin,
+  youtube: Youtube,
+};
 
 export function SiteFooter() {
+  const [social, setSocial] = useState<PublicSocialLink[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    getPublicSocialLinks()
+      .then((rows) => {
+        if (alive) setSocial(rows as PublicSocialLink[]);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <footer className="bg-[var(--purple-dark)] font-arabic text-white" dir="rtl">
       <div className="mx-auto grid max-w-[1400px] gap-10 px-5 py-14 md:grid-cols-4 md:px-10">
@@ -18,6 +43,25 @@ export function SiteFooter() {
           <p className="mt-4 text-sm leading-loose text-white/70">
             شريكك الموثوق في الخدمات السيبرانية والحلول التقنية والبرمجية والاستشارات؛ نبني حماية مستدامة لمؤسستك في عالم رقمي متطور.
           </p>
+          {social.length > 0 && (
+            <div className="mt-5 flex items-center gap-3">
+              {social.map((s) => {
+                const Icon = SOCIAL_ICONS[s.platform.toLowerCase()] ?? Mail;
+                return (
+                  <a
+                    key={s.id}
+                    href={s.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={s.platform}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-[var(--brand)]"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div>

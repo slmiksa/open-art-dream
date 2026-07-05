@@ -1,127 +1,54 @@
-import {
-  Activity,
-  Cloud,
-  Database,
-  Eye,
-  Fingerprint,
-  FileLock2,
-  Network,
-  Radar,
-  ServerCog,
-  ShieldCheck,
-} from "lucide-react";
+import { Activity, ServerCog, type LucideIcon } from "lucide-react";
+import { getIcon } from "@/lib/icons";
+import type { PublicSystem } from "@/lib/public.functions";
 
 export type SystemItem = {
   id: string;
   name: string;
   tagline: string;
   description: string;
-  Icon: typeof ShieldCheck;
+  Icon: LucideIcon;
   gradient: string;
   accent: string;
   metrics: { label: string; value: string }[];
 };
 
-export const systems: SystemItem[] = [
-  {
-    id: "sentinel",
-    name: "Sentinel SOC",
-    tagline: "مركز عمليات أمنية ذكي",
-    description:
-      "منصة مراقبة لحظية على مدار 24/7 ترصد الأنشطة المشبوهة، وتربط الإنذارات تلقائياً عبر الخوادم والشبكات والسحابة، مع استجابة تلقائية للحوادث الحرجة.",
-    Icon: Radar,
-    gradient: "from-sky-500/30 via-cyan-500/20 to-transparent",
-    accent: "#48AAC8",
-    metrics: [
-      { label: "تنبيهات/يوم", value: "12,480" },
-      { label: "حوادث محتواة", value: "98.7%" },
-    ],
-  },
-  {
-    id: "vaultx",
-    name: "VaultX Encrypt",
-    tagline: "تشفير وحماية البيانات",
-    description:
-      "نظام تشفير من طرف إلى طرف لجميع بياناتك الحساسة، مع إدارة مفاتيح مركزية متوافقة مع معايير AES-256 و FIPS 140-2 لضمان السرية الكاملة.",
-    Icon: FileLock2,
-    gradient: "from-indigo-500/30 via-blue-500/20 to-transparent",
-    accent: "#7C8CFF",
-    metrics: [
-      { label: "خوارزمية", value: "AES-256" },
-      { label: "ملفات محمية", value: "+1.2M" },
-    ],
-  },
-  {
-    id: "nethawk",
-    name: "NetHawk Firewall",
-    tagline: "جدار حماية الجيل التالي",
-    description:
-      "حماية متقدمة للشبكات تعتمد على الذكاء الاصطناعي لتحليل حركة البيانات لحظياً، وتمنع التهديدات قبل وصولها لأنظمتك الداخلية.",
-    Icon: Network,
-    gradient: "from-emerald-500/30 via-teal-500/20 to-transparent",
-    accent: "#42D6B0",
-    metrics: [
-      { label: "سرعة الفحص", value: "40 Gbps" },
-      { label: "قواعد نشطة", value: "+8,000" },
-    ],
-  },
-  {
-    id: "cloudguard",
-    name: "CloudGuard 360",
-    tagline: "حماية البيئات السحابية",
-    description:
-      "إدارة شاملة لأمن AWS و Azure و Google Cloud، مع كشف الإعدادات الخاطئة، تقييم الامتثال، وحماية حسابات الهوية والوصول.",
-    Icon: Cloud,
-    gradient: "from-cyan-500/30 via-sky-500/20 to-transparent",
-    accent: "#5BC0EB",
-    metrics: [
-      { label: "مزودون", value: "AWS · Azure · GCP" },
-      { label: "تقييم الامتثال", value: "ISO/NCA" },
-    ],
-  },
-  {
-    id: "phishshield",
-    name: "PhishShield AI",
-    tagline: "كشف هجمات التصيد",
-    description:
-      "محرك ذكاء اصطناعي يفحص الرسائل والروابط لكشف محاولات التصيد والاحتيال الإلكتروني قبل أن تصل إلى موظفيك.",
-    Icon: Eye,
-    gradient: "from-fuchsia-500/30 via-purple-500/20 to-transparent",
-    accent: "#C57BFF",
-    metrics: [
-      { label: "دقة الكشف", value: "99.4%" },
-      { label: "نماذج AI", value: "+15" },
-    ],
-  },
-  {
-    id: "idtrust",
-    name: "IDTrust IAM",
-    tagline: "إدارة الهوية والصلاحيات",
-    description:
-      "منصة مركزية لإدارة هويات المستخدمين والصلاحيات، مع دعم MFA، Single Sign-On، وتطبيق سياسة Zero Trust في كل المؤسسة.",
-    Icon: Fingerprint,
-    gradient: "from-amber-500/30 via-orange-500/20 to-transparent",
-    accent: "#F5A65B",
-    metrics: [
-      { label: "MFA", value: "مفعّل" },
-      { label: "تطبيقات مدمجة", value: "+200" },
-    ],
-  },
-  {
-    id: "backupcore",
-    name: "BackupCore Vault",
-    tagline: "نسخ احتياطي مقاوم للفدية",
-    description:
-      "حلول نسخ احتياطي مشفّرة وموزعة جغرافياً مع لقطات غير قابلة للحذف (Immutable Snapshots)، تضمن استعادة كاملة بعد أي هجوم فدية.",
-    Icon: Database,
-    gradient: "from-rose-500/30 via-pink-500/20 to-transparent",
-    accent: "#FF7A8A",
-    metrics: [
-      { label: "RPO", value: "≤ 5 دقائق" },
-      { label: "RTO", value: "≤ 30 دقيقة" },
-    ],
-  },
+const ACCENTS = ["#48AAC8", "#7C8CFF", "#42D6B0", "#5BC0EB", "#C57BFF", "#F5A65B", "#FF7A8A"];
+const GRADIENTS = [
+  "from-sky-500/30 via-cyan-500/20 to-transparent",
+  "from-indigo-500/30 via-blue-500/20 to-transparent",
+  "from-emerald-500/30 via-teal-500/20 to-transparent",
+  "from-cyan-500/30 via-sky-500/20 to-transparent",
+  "from-fuchsia-500/30 via-purple-500/20 to-transparent",
+  "from-amber-500/30 via-orange-500/20 to-transparent",
+  "from-rose-500/30 via-pink-500/20 to-transparent",
 ];
+
+/** Maps a DB system row into the richly-styled SystemItem used by the UI. */
+export function toSystemItem(row: PublicSystem, index: number): SystemItem {
+  const accent = ACCENTS[index % ACCENTS.length];
+  const gradient = GRADIENTS[index % GRADIENTS.length];
+  const desc = row.description ?? "";
+  const parts = desc.split(" — ");
+  const tagline = parts.length > 1 ? parts[0] : "";
+  const description = parts.length > 1 ? parts.slice(1).join(" — ") : desc;
+  const metrics = (row.features ?? []).map((f) => {
+    const idx = f.indexOf(":");
+    return idx >= 0
+      ? { label: f.slice(0, idx).trim(), value: f.slice(idx + 1).trim() }
+      : { label: f.trim(), value: "" };
+  });
+  return {
+    id: row.id,
+    name: row.title,
+    tagline,
+    description,
+    Icon: getIcon(row.icon),
+    gradient,
+    accent,
+    metrics,
+  };
+}
 
 export function SystemMock({ system, large = false }: { system: SystemItem; large?: boolean }) {
   const { Icon, accent, name, tagline } = system;
@@ -195,7 +122,7 @@ export function SystemMock({ system, large = false }: { system: SystemItem; larg
 }
 
 export function SystemCard({ system, onOpen }: { system: SystemItem; onOpen: () => void }) {
-  const { Icon, name, tagline, accent, gradient } = system;
+  const { Icon, name, tagline, accent } = system;
   return (
     <button
       onClick={onOpen}
@@ -237,14 +164,16 @@ export function SystemDialogContent({ system }: { system: SystemItem }) {
           <h2 className="text-2xl font-black text-[var(--purple)]">{system.name}</h2>
           <p className="text-base leading-loose text-[var(--ink-soft)]">{system.description}</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 border-t border-[var(--line)] pt-5">
-          {system.metrics.map((m) => (
-            <div key={m.label} className="rounded-2xl border border-[var(--line)] bg-[oklch(0.98_0.005_270)] p-4">
-              <div className="text-[11px] tracking-wider text-[var(--ink-soft)]">{m.label}</div>
-              <div className="mt-1 text-lg font-bold text-[var(--purple)]">{m.value}</div>
-            </div>
-          ))}
-        </div>
+        {system.metrics.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 border-t border-[var(--line)] pt-5">
+            {system.metrics.map((m) => (
+              <div key={m.label} className="rounded-2xl border border-[var(--line)] bg-[oklch(0.98_0.005_270)] p-4">
+                <div className="text-[11px] tracking-wider text-[var(--ink-soft)]">{m.label}</div>
+                <div className="mt-1 text-lg font-bold text-[var(--purple)]">{m.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
