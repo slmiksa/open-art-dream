@@ -85,10 +85,11 @@ function ServiceCard({
           <Label>اسم الأيقونة (Lucide)</Label>
           <Input dir="ltr" value={draft.icon ?? ""} onChange={(e) => set({ icon: e.target.value })} placeholder="ShieldAlert" />
         </div>
-        <div>
-          <Label>رابط الصورة</Label>
-          <Input dir="ltr" value={draft.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://..." />
-        </div>
+        <ImageUpload
+          label="صورة الخدمة (اختياري)"
+          value={draft.image_url}
+          onChange={(url) => set({ image_url: url ?? null })}
+        />
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Label>الترتيب</Label>
