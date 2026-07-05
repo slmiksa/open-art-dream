@@ -30,12 +30,25 @@ export function useAdminTable<T extends { id: string }>(table: AdminTable) {
 
   const save = useCallback(
     async (row: Partial<T>) => {
-      const saved = (await adminUpsert({ data: { table, row: row as Record<string, unknown> } })) as T;
-      setRows((s) => {
-        const exists = s.some((r) => r.id === saved.id);
-        return exists ? s.map((r) => (r.id === saved.id ? saved : r)) : [...s, saved];
-      });
-      return saved;
+      const isNew = !row.id;
+      try {
+        const saved = (await adminUpsert({
+          data: { table, row: row as Record<string, unknown> },
+        })) as T;
+        setRows((s) => {
+          const exists = s.some((r) => r.id === saved.id);
+          // Prepend new rows so they are immediately visible at the top.
+          return exists ? s.map((r) => (r.id === saved.id ? saved : r)) : [saved, ...s];
+        });
+        setError(null);
+        if (isNew && typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        return saved;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "تعذّر حفظ البيانات");
+        throw e;
+      }
     },
     [table],
   );
