@@ -1,7 +1,7 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./types";
+import type { Database } from "./db-types";
 
 const SUPABASE_URL =
   process.env.EXT_SUPABASE_URL ?? "https://ilqvsjwlajkmflutcxhh.supabase.co";

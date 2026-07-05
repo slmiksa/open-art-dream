@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./types";
+import type { Database } from "./db-types";
 
 // Service-role client. Server-only. BYPASSES RLS. Never import into the browser.
 const url = process.env.EXT_SUPABASE_URL;
