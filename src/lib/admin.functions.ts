@@ -116,3 +116,27 @@ export const adminDelete = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Uploads an image (as a data URL) to the public `media` bucket and returns its URL. */
+export const adminUploadImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { filename: string; dataUrl: string }) => {
+    if (!d?.dataUrl || !d.dataUrl.startsWith("data:")) throw new Error("Invalid file");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const match = data.dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) throw new Error("Invalid data URL");
+    const contentType = match[1];
+    const buffer = Buffer.from(match[2], "base64");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const ext = (data.filename.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("media")
+      .upload(path, buffer, { contentType, upsert: true });
+    if (error) throw new Error(error.message);
+    const { data: pub } = supabaseAdmin.storage.from("media").getPublicUrl(path);
+    return { url: pub.publicUrl };
+  });

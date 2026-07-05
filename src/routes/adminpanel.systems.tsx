@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAdminTable } from "@/hooks/useAdminTable";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 export const Route = createFileRoute("/adminpanel/systems")({
   component: SystemsAdmin,
@@ -100,10 +101,11 @@ function SystemCard({
             placeholder="ميزة 1، ميزة 2"
           />
         </div>
-        <div>
-          <Label>رابط الصورة</Label>
-          <Input dir="ltr" value={draft.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://..." />
-        </div>
+        <ImageUpload
+          label="صورة النظام (اختياري)"
+          value={draft.image_url}
+          onChange={(url) => set({ image_url: url ?? null })}
+        />
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Label>الترتيب</Label>

@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { adminUploadImage } from "@/lib/admin.functions";
 
 interface ImageUploadProps {
-  value?: string;
+  value?: string | null;
   onChange?: (url: string | undefined) => void;
   aspect?: "video" | "square" | "wide";
   label?: string;
@@ -15,19 +17,39 @@ const aspectClass: Record<string, string> = {
   wide: "aspect-[21/9]",
 };
 
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ImageUpload({ value, onChange, aspect = "video", label = "الصورة" }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | undefined>(value);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const preview = value || undefined;
 
-  const handleFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    onChange?.(url);
+  const handleFile = async (file: File) => {
+    setError(null);
+    setUploading(true);
+    try {
+      const dataUrl = await readAsDataUrl(file);
+      const { url } = await adminUploadImage({ data: { filename: file.name, dataUrl } });
+      onChange?.(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "تعذّر رفع الصورة");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   };
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">{label}</label>
+      <Label>{label}</Label>
       <div
         className={`relative overflow-hidden rounded-lg border-2 border-dashed border-border bg-muted/30 ${aspectClass[aspect]}`}
       >
@@ -37,7 +59,6 @@ export function ImageUpload({ value, onChange, aspect = "video", label = "الص
             <button
               type="button"
               onClick={() => {
-                setPreview(undefined);
                 onChange?.(undefined);
                 if (inputRef.current) inputRef.current.value = "";
               }}
@@ -50,15 +71,31 @@ export function ImageUpload({ value, onChange, aspect = "video", label = "الص
         ) : (
           <button
             type="button"
+            disabled={uploading}
             onClick={() => inputRef.current?.click()}
             className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground transition hover:bg-muted/50"
           >
-            <Upload className="h-8 w-8" />
-            <span className="text-sm">اضغط لرفع صورة من جهازك</span>
-            <span className="text-xs opacity-70">PNG · JPG · WEBP</span>
+            {uploading ? (
+              <>
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="text-sm">جارٍ الرفع...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-8 w-8" />
+                <span className="text-sm">اضغط لرفع صورة من جهازك</span>
+                <span className="text-xs opacity-70">PNG · JPG · WEBP</span>
+              </>
+            )}
           </button>
         )}
+        {uploading && preview && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
       </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
       <input
         ref={inputRef}
         type="file"
@@ -66,7 +103,7 @@ export function ImageUpload({ value, onChange, aspect = "video", label = "الص
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleFile(file);
+          if (file) void handleFile(file);
         }}
       />
       {preview && (
@@ -74,6 +111,7 @@ export function ImageUpload({ value, onChange, aspect = "video", label = "الص
           type="button"
           variant="outline"
           size="sm"
+          disabled={uploading}
           onClick={() => inputRef.current?.click()}
         >
           <Upload className="ms-2 h-4 w-4" />

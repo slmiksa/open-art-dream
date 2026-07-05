@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAdminTable } from "@/hooks/useAdminTable";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 export const Route = createFileRoute("/adminpanel/slides")({
   component: SlidesAdmin,
@@ -107,8 +108,12 @@ function SlideCard({
           <Input dir="ltr" value={draft.cta_url ?? ""} onChange={(e) => set({ cta_url: e.target.value })} />
         </div>
         <div className="md:col-span-2">
-          <Label>رابط الصورة</Label>
-          <Input dir="ltr" value={draft.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://..." />
+          <ImageUpload
+            label="صورة السلايد"
+            aspect="wide"
+            value={draft.image_url}
+            onChange={(url) => set({ image_url: url ?? null })}
+          />
         </div>
         <div>
           <Label>الترتيب</Label>
