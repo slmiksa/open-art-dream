@@ -105,8 +105,11 @@ function ArticleCard({
           <Input dir="ltr" value={draft.slug} onChange={(e) => set({ slug: e.target.value })} />
         </div>
         <div>
-          <Label>رابط الصورة</Label>
-          <Input dir="ltr" value={draft.image_url ?? ""} onChange={(e) => set({ image_url: e.target.value })} placeholder="https://..." />
+          <ImageUpload
+            label="صورة المقال"
+            value={draft.image_url}
+            onChange={(url) => set({ image_url: url ?? null })}
+          />
         </div>
         <div className="md:col-span-2">
           <Label>المقتطف</Label>
