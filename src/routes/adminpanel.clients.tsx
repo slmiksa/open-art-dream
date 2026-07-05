@@ -70,17 +70,16 @@ function ClientCard({
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      {draft.logo_url && (
-        <img src={draft.logo_url} alt={draft.name} className="mb-3 h-16 w-full rounded-md object-contain" />
-      )}
       <div className="space-y-3">
+        <ImageUpload
+          label="شعار العميل"
+          aspect="square"
+          value={draft.logo_url}
+          onChange={(url) => set({ logo_url: url ?? null })}
+        />
         <div>
           <Label>اسم العميل</Label>
           <Input value={draft.name} onChange={(e) => set({ name: e.target.value })} />
-        </div>
-        <div>
-          <Label>رابط الشعار</Label>
-          <Input dir="ltr" value={draft.logo_url ?? ""} onChange={(e) => set({ logo_url: e.target.value })} placeholder="https://..." />
         </div>
         <div>
           <Label>الموقع الإلكتروني</Label>
