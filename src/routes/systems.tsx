@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { systems, SystemCard, SystemDialogContent, type SystemItem } from "@/lib/systems";
+import { SystemCard, SystemDialogContent, toSystemItem, type SystemItem } from "@/lib/systems";
+import { getPublicSystems, type PublicSystem } from "@/lib/public.functions";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
@@ -21,10 +22,16 @@ export const Route = createFileRoute("/systems")({
       },
     ],
   }),
+  loader: () => getPublicSystems(),
+  errorComponent: ({ error }) => (
+    <div className="p-10 text-center font-arabic" dir="rtl">حدث خطأ في التحميل: {error.message}</div>
+  ),
   component: SystemsPage,
 });
 
 function SystemsPage() {
+  const rows = Route.useLoaderData() as PublicSystem[];
+  const systemItems = rows.map((r, i) => toSystemItem(r, i));
   const [openSystem, setOpenSystem] = useState<SystemItem | null>(null);
   return (
     <div className="min-h-screen bg-white font-arabic text-[var(--ink)]">
@@ -42,11 +49,15 @@ function SystemsPage() {
       </section>
 
       <section className="mx-auto max-w-[1400px] px-5 py-16 md:px-10" dir="rtl">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {systems.map((sys) => (
-            <SystemCard key={sys.id} system={sys} onOpen={() => setOpenSystem(sys)} />
-          ))}
-        </div>
+        {systemItems.length === 0 ? (
+          <p className="text-center text-[var(--ink-soft)]">لا توجد أنظمة متاحة حالياً.</p>
+        ) : (
+          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {systemItems.map((sys) => (
+              <SystemCard key={sys.id} system={sys} onOpen={() => setOpenSystem(sys)} />
+            ))}
+          </div>
+        )}
       </section>
 
       <SiteFooter />
