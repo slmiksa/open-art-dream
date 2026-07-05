@@ -43,7 +43,7 @@ export const Route = createFileRoute("/news/$slug")({
 });
 
 function NewsDetail() {
-  const { item, others } = Route.useLoaderData();
+  const { item, others } = Route.useLoaderData() as { item: PublicNewsFull; others: PublicNews[] };
 
   return (
     <div className="min-h-screen font-arabic bg-white text-[var(--ink)]" dir="rtl">
